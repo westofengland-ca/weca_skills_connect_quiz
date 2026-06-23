@@ -1,4 +1,4 @@
-/* Minimal, accessible, weighted quiz for Skills Connect.
+﻿/* Minimal, accessible, weighted quiz for Skills Connect.
    Adds 'Not sure' and 'Skip'. Plain text "Read about all your options" link under buttons. */
 
 // ---- Config
@@ -136,6 +136,7 @@ const QUESTIONS = [
   {
     id: "q5",
     text: "Do you have an EHCP or think you may need workplace support?",
+    suppressAutoNotSure: true,
     answers: [
       { id: "q5a1", label: "Yes", weights: { supported_internships: 3, employment_support: 1 } },
       { id: "q5a2", label: "Not sure", weights: { employment_support: 2 } },
@@ -200,9 +201,11 @@ const QUESTIONS = [
     // Render normal answers
     q.answers.forEach(a => { list.append(renderOption(q, a.id, a.label)); });
 
-    // Auto-add "Not sure" with zero weight
-    const notSureId = `${q.id}_not_sure`;
-    list.append(renderOption(q, notSureId, "Not sure", /*isNotSure*/ true));
+    // Auto-add "Not sure" with zero weight (suppressed for questions that define their own)
+    if (!q.suppressAutoNotSure) {
+      const notSureId = `${q.id}_not_sure`;
+      list.append(renderOption(q, notSureId, "Not sure", /*isNotSure*/ true));
+    }
 
     stepWrap.append(qh, list);
 
@@ -308,9 +311,6 @@ const QUESTIONS = [
     progress.textContent = "Your suggested routes";
     stepWrap.replaceChildren();
 
-    const results = el("div", { class: "sc-results" });
-
-    // If user skipped or chose Not sure a lot, show a friendly nudge
     const answeredCount = Object.keys(answers).filter(k => {
       const v = answers[k];
       return v && v !== "SKIPPED" && !v.endsWith("_not_sure");
@@ -319,27 +319,28 @@ const QUESTIONS = [
     if (!top || answeredCount < 2) {
       const info = el("p", {}, "Not enough answers to prioritise one route. Read all your options below.");
       stepWrap.append(info);
+    } else {
+      const results = el("div", { class: "sc-results" });
+      if (top) results.append(renderResultCard(top[0]));
+      if (showSecond) results.append(renderResultCard(second[0]));
+
+      // "Why these results?"
+      const why = el("details", { class: "sc-card" });
+      const whySum = el("summary", {}, "Why these results?");
+      const whyList = el("ul");
+      Object.entries(answers).forEach(([qid, aid]) => {
+        const Q = QUESTIONS.find(q => q.id === qid);
+        if (!Q) return;
+        let label;
+        if (aid === "SKIPPED") label = "Skipped";
+        else if (aid.endsWith("_not_sure")) label = "Not sure";
+        else label = Q.answers.find(a => a.id === aid)?.label;
+        if (Q && label) whyList.append(el("li", {}, `${Q.text} — ${label}`));
+      });
+      why.append(whySum, whyList);
+
+      stepWrap.append(results, why);
     }
-
-    if (top) results.append(renderResultCard(top[0]));
-    if (showSecond) results.append(renderResultCard(second[0]));
-
-    // “Why these results?”
-    const why = el("details", { class: "sc-card" });
-    const whySum = el("summary", {}, "Why these results?");
-    const whyList = el("ul");
-    Object.entries(answers).forEach(([qid, aid]) => {
-      const Q = QUESTIONS.find(q => q.id === qid);
-      if (!Q) return;
-      let label;
-      if (aid === "SKIPPED") label = "Skipped";
-      else if (aid.endsWith("_not_sure")) label = "Not sure";
-      else label = Q.answers.find(a => a.id === aid)?.label;
-      if (Q && label) whyList.append(el("li", {}, `${Q.text} — ${label}`));
-    });
-    why.append(whySum, whyList);
-
-    stepWrap.append(results, why);
 
     // Actions: replace with retake + same inline read-all link
     actions.replaceChildren();
