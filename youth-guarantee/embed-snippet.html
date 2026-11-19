@@ -1,0 +1,38 @@
+<!-- Youth Guarantee quiz embed for Skills Connect.
+     Paste into one Custom HTML block on https://www.skillsconnect.org.uk/youth-guarantee/
+     The script resizes the iframe to fit the quiz and passes quiz events to Google Analytics. -->
+<iframe id="yg-quiz-frame"
+  src="https://westofengland-ca.github.io/weca_skills_connect_quiz/youth-guarantee/"
+  title="Youth Guarantee quiz: find support near you"
+  style="display:block;width:100%;border:0;min-height:520px"
+  loading="lazy"></iframe>
+<p><a href="https://westofengland-ca.github.io/weca_skills_connect_quiz/youth-guarantee/">Open the quiz in a new window</a></p>
+<script>
+(function () {
+  window.addEventListener("message", function (e) {
+    if (e.origin !== "https://westofengland-ca.github.io") return;
+    var d = e.data || {};
+    if (d.source !== "yg-quiz") return;
+
+    if (d.type === "height" && typeof d.value === "number") {
+      var f = document.getElementById("yg-quiz-frame");
+      if (f) {
+        f.style.minHeight = "0";
+        f.style.height = Math.max(300, Math.min(d.value + 4, 4000)) + "px";
+      }
+      return;
+    }
+
+    if (d.type === "event" && typeof d.name === "string" && /^quiz_[a-z_]+$/.test(d.name)) {
+      var params = d.params && typeof d.params === "object" ? d.params : {};
+      if (typeof window.gtag === "function") {
+        window.gtag("event", d.name, params);
+      } else if (Array.isArray(window.dataLayer)) {
+        var push = { event: d.name };
+        for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k)) push[k] = params[k]; }
+        window.dataLayer.push(push);
+      }
+    }
+  });
+})();
+</script>

@@ -1,0 +1,224 @@
+/* Youth Guarantee quiz. Uses the same Skills Connect tokens as the pathways quiz. */
+:root{
+  --primary:#520C71;
+  --primary-dark:#3B0852;
+  --col4:#112b46;
+  --col6:#DCCEE3;
+  --focus-yellow:#fd0;
+  --focus-black:#0b0c0c;
+  --error:#B10E1E;
+  --grey1:#4A4A4A;
+  --grey3:#F7F7F7;
+  --grey5:#343A40;
+  --grey6:#BBBBBB;
+  --grey7:#E6E6E6;
+  --white:#fff;
+
+  --space-1:0.5rem;
+  --space-2:0.75rem;
+  --space-3:1rem;
+  --space-4:1.5rem;
+  --space-5:2rem;
+}
+
+*,
+*::before,
+*::after{ box-sizing:border-box; }
+
+html,body{
+  margin:0;
+  padding:0;
+  background:var(--grey3);
+  color:var(--grey5);
+  font-family:"Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size:1.0625rem;
+  line-height:1.5;
+}
+
+/* When embedded, the host page supplies the heading and background */
+.is-embedded,
+.is-embedded body{ background:transparent; }
+.is-embedded .yg-header{ display:none; }
+.is-embedded .yg-container{ padding:0; }
+
+.yg-container{
+  max-width:900px;
+  margin:0 auto;
+  padding:var(--space-5) var(--space-3);
+}
+
+.yg-h1{
+  margin:0 0 var(--space-2);
+  color:var(--primary);
+  font-size:clamp(1.5rem, 1.1rem + 1.5vw, 2.25rem);
+  line-height:1.2;
+}
+.yg-intro{ margin:0 0 var(--space-4); color:var(--grey1); }
+
+.yg-card{
+  background:var(--white);
+  border:1px solid var(--grey7);
+  padding:var(--space-4);
+}
+
+.yg-progress{
+  margin:0 0 var(--space-2);
+  font-size:.9375rem;
+  color:var(--grey1);
+}
+
+/* Question */
+.yg-fieldset{ border:0; margin:0 0 var(--space-4); padding:0; min-width:0; }
+.yg-legend{ padding:0; margin:0 0 var(--space-2); }
+.yg-q{
+  margin:0;
+  color:var(--col4);
+  font-size:1.5rem;
+  line-height:1.3;
+}
+.yg-q:focus{ outline:none; }
+.yg-hint{ margin:0 0 var(--space-3); color:var(--grey1); }
+
+.yg-error{
+  margin:0 0 var(--space-3);
+  color:var(--error);
+  font-weight:700;
+}
+.yg-fieldset--error{
+  border-left:5px solid var(--error);
+  padding-left:var(--space-3);
+}
+
+.yg-options{ display:grid; gap:var(--space-2); }
+
+.yg-option{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:var(--space-2);
+  min-height:3rem;
+  padding:var(--space-2) var(--space-3);
+  background:var(--white);
+  border:2px solid var(--grey6);
+  cursor:pointer;
+}
+.yg-option:hover{ border-color:var(--primary); }
+.yg-option:has(input:checked){ border-color:var(--primary); background:#F6F1F8; }
+.yg-option input{
+  flex:none;
+  inline-size:1.375rem;
+  block-size:1.375rem;
+  margin:0;
+  accent-color:var(--primary);
+  cursor:pointer;
+}
+.yg-option:has(input:focus-visible){
+  outline:3px solid var(--focus-yellow);
+  outline-offset:0;
+  box-shadow:0 0 0 6px var(--focus-black);
+}
+
+/* Buttons and links */
+.yg-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--space-2);
+  align-items:center;
+}
+
+.yg-btn{
+  appearance:none;
+  border:2px solid transparent;
+  border-radius:3.75rem;
+  padding:.75rem 1.5rem;
+  font:inherit;
+  font-weight:700;
+  line-height:1.2;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-block;
+}
+.yg-btn--primary{ background:var(--primary); color:var(--white); }
+.yg-btn--primary:hover{ background:var(--primary-dark); }
+.yg-btn--secondary{ background:var(--white); color:var(--primary); border-color:var(--primary); }
+.yg-btn--secondary:hover{ background:#F6F1F8; }
+
+.yg-btn:focus-visible,
+.yg-link:focus-visible,
+.yg-apply:focus-visible{
+  outline:3px solid transparent;
+  background:var(--focus-yellow);
+  color:var(--focus-black);
+  box-shadow:0 3px 0 var(--focus-black);
+  text-decoration:none;
+}
+
+.yg-link{ color:var(--col4); text-decoration:underline; text-underline-offset:.15em; }
+.yg-link:hover{ text-decoration-thickness:2px; }
+
+/* Results */
+.yg-result-h{
+  margin:0 0 var(--space-2);
+  color:var(--col4);
+  font-size:1.5rem;
+  line-height:1.3;
+}
+.yg-result-h:focus{ outline:none; }
+.yg-lead{ margin:0 0 var(--space-4); }
+
+.yg-programmes{
+  list-style:none;
+  margin:0 0 var(--space-4);
+  padding:0;
+  display:grid;
+  gap:var(--space-3);
+}
+.yg-programme{
+  border:1px solid var(--grey7);
+  border-left:8px solid var(--primary);
+  padding:var(--space-3) var(--space-4);
+  background:var(--white);
+}
+.yg-programme h3{
+  margin:0 0 var(--space-1);
+  color:var(--primary);
+  font-size:1.25rem;
+  line-height:1.3;
+}
+.yg-programme p{ margin:0 0 var(--space-2); }
+.yg-who{ color:var(--grey1); }
+.yg-who span{ font-weight:700; color:var(--grey5); }
+
+.yg-apply{
+  display:inline-block;
+  margin-top:var(--space-1);
+  padding:.6rem 1rem;
+  background:var(--col6);
+  color:var(--col4);
+  border-radius:3.75rem;
+  font-weight:700;
+  text-decoration:none;
+}
+.yg-apply:hover{ text-decoration:underline; }
+
+.yg-more{ margin:0 0 var(--space-4); }
+
+.visually-hidden{
+  position:absolute !important;
+  width:1px; height:1px;
+  margin:-1px; padding:0;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+  border:0;
+}
+
+@media (max-width:480px){
+  .yg-card{ padding:var(--space-3); }
+  .yg-programme{ padding:var(--space-3); }
+  .yg-q, .yg-result-h{ font-size:1.3125rem; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; scroll-behavior:auto !important; }
+}

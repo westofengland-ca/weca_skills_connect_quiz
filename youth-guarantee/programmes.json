@@ -1,0 +1,90 @@
+[
+  {
+    "id": "south-bristol",
+    "name": "South Bristol",
+    "summary": "Career coaching, a 4-week course to get ready for work, work tasters, wellbeing support and Love2shop vouchers.",
+    "who_for": "16 to 21 year olds living in South Bristol, including postcodes BS3, BS4, BS13 and BS14. Nearby postcodes may also be considered.",
+    "areas": ["bristol"],
+    "age_min": 16,
+    "age_max": 21,
+    "apply_url": "https://forms.cloud.microsoft/pages/responsepage.aspx?id=pad4YyEPgkSu4Il-t94zHxM338YKYuxBp5_NOaEY7VxURTZWN1FBMVBHOFBCT1NKU0o4QUVYTE9QSy4u&route=shorturl",
+    "apply_label": "Apply for South Bristol support"
+  },
+  {
+    "id": "rural-access-banes",
+    "name": "Rural access: Bath and North East Somerset",
+    "summary": "Support from seven local partners, free bus travel and help with transport, short courses in areas like hospitality and media, and help starting a business.",
+    "who_for": "16 to 21 year olds living in Bath and North East Somerset. It focuses on young people who find it hard to get to work or training, but anyone in the area can apply.",
+    "areas": ["banes"],
+    "age_min": 16,
+    "age_max": 21,
+    "apply_url": "https://www.skillsconnect.org.uk/contact-us/speak-to-us/",
+    "apply_label": "Apply for rural access support in Bath and North East Somerset"
+  },
+  {
+    "id": "future-ready",
+    "name": "Future Ready",
+    "summary": "One-to-one careers support, advice on housing, money and health, group confidence sessions, and volunteering and work experience.",
+    "who_for": "18 to 21 year olds in Bath and North East Somerset, including young people facing extra barriers.",
+    "areas": ["banes"],
+    "age_min": 18,
+    "age_max": 21,
+    "apply_url": "mailto:Futureready@alongsidecharity.org.uk",
+    "apply_label": "Email to apply for Future Ready"
+  },
+  {
+    "id": "care-leavers-north-somerset",
+    "name": "Care leavers: North Somerset",
+    "summary": "Specialist job coaching, money to help remove barriers to work, work placements and job opportunities, and help building skills and confidence.",
+    "who_for": "Care-experienced 16 to 21 year olds in North Somerset.",
+    "areas": ["north-somerset"],
+    "age_min": 16,
+    "age_max": 21,
+    "apply_url": "https://www.skillsconnect.org.uk/contact-us/speak-to-us/",
+    "apply_label": "Apply for care leavers support in North Somerset"
+  },
+  {
+    "id": "south-gloucestershire",
+    "name": "South Gloucestershire",
+    "summary": "Up to 20 weeks of personalised support, an 8-week work placement with a dedicated job coach, and help with English and maths.",
+    "who_for": "16 to 21 year olds in South Gloucestershire, including young people with SEND or mental health challenges.",
+    "areas": ["south-glos"],
+    "age_min": 16,
+    "age_max": 21,
+    "apply_url": "https://www.skillsconnect.org.uk/contact-us/speak-to-us/",
+    "apply_label": "Apply for South Gloucestershire support"
+  },
+  {
+    "id": "united-bristol",
+    "name": "United Bristol",
+    "summary": "Boxing, football and rugby sessions with local sports charities, plus one-to-one mentoring, confidence building and help writing a CV.",
+    "who_for": "16 to 21 year olds in Bristol, North Somerset and South Gloucestershire. You do not need any sports experience.",
+    "areas": ["bristol", "north-somerset", "south-glos"],
+    "age_min": 16,
+    "age_max": 21,
+    "apply_url": "https://bit.ly/unitedbristol",
+    "apply_label": "Apply for United Bristol"
+  },
+  {
+    "id": "wellbeing-works",
+    "name": "Wellbeing Works",
+    "summary": "Up to 12 months of work and confidence coaching, food and nutrition workshops, and up to 6 months of counselling.",
+    "who_for": "16 to 21 year olds in Bristol, North Somerset and South Gloucestershire.",
+    "areas": ["bristol", "north-somerset", "south-glos"],
+    "age_min": 16,
+    "age_max": 21,
+    "apply_url": "mailto:rebecca.ball@1625ip.co.uk",
+    "apply_label": "Email Rebecca to apply for Wellbeing Works"
+  },
+  {
+    "id": "make-it-happen",
+    "name": "Make It Happen!",
+    "summary": "One-to-one coaching and mentoring, short courses in subjects like music, art and textiles, work experience and ready-for-work training with employers.",
+    "who_for": "16 to 21 year olds anywhere in the West of England. A good fit if you are not sure how to start and have a range of interests.",
+    "areas": ["bristol", "banes", "north-somerset", "south-glos"],
+    "age_min": 16,
+    "age_max": 21,
+    "apply_url": "mailto:harriet.hayes@creativeyouthnetwork.org.uk",
+    "apply_label": "Email Harriet to apply for Make It Happen!"
+  }
+]
