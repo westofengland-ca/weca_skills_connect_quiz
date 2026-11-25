@@ -9,6 +9,9 @@
   var LINKS = {
     ygPage: "https://www.skillsconnect.org.uk/youth-guarantee/",
     directory: "https://www.skillsconnect.org.uk/directory/",
+    // Under 16s get the directory pre-filtered by age. Set this to the plain
+    // directory URL above if the filter hides too much.
+    directoryUnder16: "https://www.skillsconnect.org.uk/directory/?age=18-and-under",
     contact: "https://www.skillsconnect.org.uk/contact-us/speak-to-us/",
     ncs: "https://nationalcareers.service.gov.uk/"
   };
@@ -187,9 +190,12 @@
   function renderResult() {
     if (answers.support) {
       if (answers.support === "directory") {
+        var under16 = answers.age === "under-16";
         showSimpleResult("directory", "Find support in the Skills Connect directory",
-          "The Skills Connect directory lists support for people of all ages in the West of England.",
-          { text: "Search the Skills Connect directory", href: LINKS.directory, type: "directory" });
+          under16
+            ? "The Skills Connect directory lists support in the West of England. This link shows support for people aged 18 and under."
+            : "The Skills Connect directory lists support for people of all ages in the West of England.",
+          { text: "Search the Skills Connect directory", href: under16 ? LINKS.directoryUnder16 : LINKS.directory, type: "directory" });
       } else {
         showSimpleResult("contact", "Speak to Skills Connect",
           "Use the Skills Connect contact form to ask about your next steps.",
