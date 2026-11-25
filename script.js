@@ -1,399 +1,421 @@
-﻿/* Minimal, accessible, weighted quiz for Skills Connect.
-   Adds 'Not sure' and 'Skip'. Plain text "Read about all your options" link under buttons. */
+/* Youth Guarantee quiz for Skills Connect.
+   Two questions: age, then area (or support type for under 16s and 22+).
+   Programme results come from programmes.json, filtered by area and age.
+   No build step, no dependencies. */
+(function () {
+  "use strict";
 
-// ---- Config
-const READ_ALL_URL = "https://www.skillsconnect.org.uk/find-your-direction/pathways-to-work#list";
+  // ---- Config
+  var LINKS = {
+    ygPage: "https://www.skillsconnect.org.uk/youth-guarantee/",
+    directory: "https://www.skillsconnect.org.uk/directory/",
+    // Under 16s get the directory pre-filtered by age. Set this to the plain
+    // directory URL above if the filter hides too much.
+    directoryUnder16: "https://www.skillsconnect.org.uk/directory/?age=18-and-under",
+    contact: "https://www.skillsconnect.org.uk/contact-us/speak-to-us/",
+    ncs: "https://nationalcareers.service.gov.uk/"
+  };
+  var DATA_URL = "programmes.json";
+  // Pages allowed to receive analytics events and height updates from this quiz
+  var HOST_ORIGINS = ["https://www.skillsconnect.org.uk", "https://skillsconnect.org.uk"];
 
-// ---- Analytics wrapper (safe if GA not present)
-function sendAnalytics(eventName, params = {}) {
-  try {
-    if (typeof window.gtag === "function") {
-      window.gtag("event", eventName, params);
+  var AREAS = {
+    "bristol": "Bristol",
+    "banes": "Bath and North East Somerset",
+    "north-somerset": "North Somerset",
+    "south-glos": "South Gloucestershire"
+  };
+
+  var AGE_BANDS = {
+    "16-17": { min: 16, max: 17 },
+    "18-21": { min: 18, max: 21 }
+  };
+
+  var QUESTIONS = {
+    age: {
+      text: "How old are you?",
+      error: "Select your age",
+      options: [
+        { value: "under-16", label: "Under 16" },
+        { value: "16-17", label: "16 or 17" },
+        { value: "18-21", label: "18 to 21" },
+        { value: "22-plus", label: "22 or over" }
+      ],
+      next: function (v) { return AGE_BANDS[v] ? "area" : "support"; }
+    },
+    area: {
+      text: "Where do you live?",
+      error: "Select where you live",
+      options: [
+        { value: "bristol", label: "Bristol" },
+        { value: "banes", label: "Bath and North East Somerset" },
+        { value: "north-somerset", label: "North Somerset" },
+        { value: "south-glos", label: "South Gloucestershire" },
+        { value: "elsewhere", label: "Somewhere else" }
+      ],
+      next: function () { return null; }
+    },
+    support: {
+      text: "What do you need support with?",
+      hint: "Youth Guarantee projects are for 16 to 21 year olds, but there is other support you can get.",
+      error: "Select what you need support with",
+      options: [
+        { value: "directory", label: "I want to see what support is available to me" },
+        { value: "contact", label: "I want to speak to someone about my next steps" }
+      ],
+      next: function () { return null; }
     }
-  } catch (_) {}
-}
+  };
 
-// ---- Outcomes: exact titles/copy, only real links
-const OUTCOMES = {
-  direct_employment: {
-    title: "Direct employment",
-    summary:
-      "Some people are ready to go straight into work. They can apply for entry-level jobs that don’t always need lots of qualifications, like retail, hospitality, customer service, or warehouse work. These jobs help them build experience and transferable skills.",
-    links: [
-      { text: "Entry-level opportunities", href: "https://www.skillsconnect.org.uk/entry-level-opportunities/" }
-    ],
-    accent: "var(--col12)"
-  },
-  apprenticeships: {
-    title: "Apprenticeships",
-    summary:
-      "An apprenticeship means learning on the job while also studying towards a qualification.\n\nThey’re paid, so you can earn while you learn. Apprenticeships are available in almost every sector from construction, health and care, digital, business, creative industries, and more.",
-    links: [
-      { text: "Apprenticeship levels", href: "https://www.skillsconnect.org.uk/apprenticeships/#levels" }
-    ],
-    accent: "var(--col5)"
-  },
-  pre_employment: {
-    title: "Pre-employment programmes",
-    summary:
-      "These are short programmes designed to help young people build confidence, improve skills like CV writing or interview techniques, and get some work experience. They’re often a stepping stone into apprenticeships or jobs.",
-    links: [],
-    accent: "var(--col3)"
-  },
-  supported_internships: {
-    title: "Supported internships",
-    summary:
-      "For young people with additional needs, supported internships combine work placements with extra help from a job coach or mentor. They’re designed to make the transition into paid work smoother and more achievable.",
-    links: [
-      { text: "Guide to supported internships", href: "https://www.skillsconnect.org.uk/find-your-direction/internships/guide-to-supported-internships/" }
-    ],
-    accent: "var(--col10)"
-  },
-  college_training: {
-    title: "College or further training leading to work",
-    summary:
-      "Some may choose to carry on with a course at college—like a vocational qualification (e.g. plumbing, childcare, health & social care, hairdressing) with a clear route into jobs in that sector.",
-    links: [],
-    accent: "var(--col2)"
-  },
-  volunteering: {
-    title: "Work experience & volunteering",
-    summary:
-      "Although unpaid, volunteering and short work experience placements are a great way to build confidence, skills, and connections. It often makes a young person’s CV stand out to future employers.",
-    links: [],
-    accent: "var(--col6)"
-  },
-  graduate_routes: {
-    title: "Graduate schemes or higher-level routes",
-    summary:
-      "For those who go on to university or higher education, graduate schemes and internships are a route into professional roles with structured training and progression.",
-    links: [
-      { text: "Internships", href: "https://www.skillsconnect.org.uk/find-your-direction/internships/" }
-    ],
-    accent: "var(--col7)"
-  },
-  self_employed: {
-    title: "Self-employment or starting a business",
-    summary:
-      "Some young people may want to set up their own business or work freelance (common in areas like digital, design, or creative industries). There are schemes that offer advice, mentoring, and sometimes funding to help.",
-    links: [],
-    accent: "var(--col8)"
-  },
-  employment_support: {
-    title: "Help from employment support services",
-    summary:
-      "There are also specialist services (like Jobcentre Plus Youth Hubs, local council projects, or voluntary organisations) that provide tailored advice, coaching, and links to employers for young people struggling to find the right path.\n\nSkills Connect can also help you find work, improve your CV and prepare for interviews.",
-    links: [
-      { text: "Speak to Skills Connect", href: "https://www.skillsconnect.org.uk/contact-us/speak-to-us/" }
-    ],
-    accent: "var(--col13)"
-  }
-};
+  var TOTAL_STEPS = 2; // every route is two questions
 
-// ---- Questions: six, high-signal, mapped to those outcomes with weights
-// Note: 'Not sure' is added automatically in the UI with zero weight.
-const QUESTIONS = [
-  {
-    id: "q1",
-    text: "What matters most right now?",
-    answers: [
-      { id: "q1a1", label: "Getting paid soon", weights: { direct_employment: 2, apprenticeships: 2 } },
-      { id: "q1a2", label: "Building confidence first", weights: { pre_employment: 2, volunteering: 1 } },
-      { id: "q1a3", label: "Getting a qualification first", weights: { college_training: 2, graduate_routes: 1 } },
-      { id: "q1a4", label: "Extra help at work or on placement", weights: { supported_internships: 3 } },
-      { id: "q1a5", label: "Starting my own thing", weights: { self_employed: 3 } }
-    ]
-  },
-  {
-    id: "q2",
-    text: "How do you feel about studying in the next 6 to 12 months?",
-    answers: [
-      { id: "q2a1", label: "I’d rather work than study", weights: { direct_employment: 2, apprenticeships: 1 } },
-      { id: "q2a2", label: "I’ll study if it leads to a job", weights: { college_training: 2, apprenticeships: 1 } },
-      { id: "q2a3", label: "I need to build up first", weights: { pre_employment: 2, volunteering: 1 } }
-    ]
-  },
-  {
-    id: "q3",
-    text: "What kind of help would be most useful?",
-    answers: [
-      { id: "q3a1", label: "Advice, coaching and links to employers", weights: { employment_support: 3 } },
-      { id: "q3a2", label: "A paid role with training built in", weights: { apprenticeships: 2, direct_employment: 1 } },
-      { id: "q3a3", label: "A short programme to build skills", weights: { pre_employment: 2 } },
-      { id: "q3a4", label: "Clear steps after a course", weights: { college_training: 2, graduate_routes: 1 } },
-      { id: "q3a5", label: "Business mentoring or startup advice", weights: { self_employed: 2 } }
-    ]
-  },
-  {
-    id: "q4",
-    text: "How soon do you need income?",
-    answers: [
-      { id: "q4a1", label: "Right away", weights: { direct_employment: 2, apprenticeships: 2 } },
-      { id: "q4a2", label: "Soon, after some prep", weights: { pre_employment: 2, volunteering: 1 } },
-      { id: "q4a3", label: "I can study first", weights: { college_training: 2, graduate_routes: 1 } }
-    ]
-  },
-  {
-    id: "q5",
-    text: "Do you have an EHCP or think you may need workplace support?",
-    suppressAutoNotSure: true,
-    answers: [
-      { id: "q5a1", label: "Yes", weights: { supported_internships: 3, employment_support: 1 } },
-      { id: "q5a2", label: "Not sure", weights: { employment_support: 2 } },
-      { id: "q5a3", label: "No", weights: {} }
-    ]
-  },
-  {
-    id: "q6",
-    text: "Which sounds closest to you?",
-    answers: [
-      { id: "q6a1", label: "Apply for jobs now", weights: { direct_employment: 2 } },
-      { id: "q6a2", label: "Earn and learn", weights: { apprenticeships: 2 } },
-      { id: "q6a3", label: "Study a course that leads to work", weights: { college_training: 2 } },
-      { id: "q6a4", label: "Build confidence and experience", weights: { pre_employment: 1, volunteering: 1 } },
-      { id: "q6a5", label: "Be self-employed or freelance", weights: { self_employed: 2 } }
-    ]
-  }
-];
-
-// ---- Render + logic
-(function initQuiz(){
-  const root = document.getElementById("quiz-root");
+  // ---- Setup
+  var root = document.getElementById("yg-quiz");
   if (!root) return;
 
-  const quizId = root.getAttribute("data-quiz-id") || "skillsconnect-quiz";
-  let stepIndex = 0;
-  const answers = {}; // questionId -> answerId or "SKIPPED" or "NOT_SURE"
-  const scores = {};  // outcomeId -> score
+  var quizId = root.getAttribute("data-quiz-id") || "yg-quiz";
+  var embedded = isEmbedded();
+  if (embedded) document.documentElement.classList.add("is-embedded");
 
-  // Skeleton
-  const card = el("section", { class: "sc-card", role: "region", "aria-live": "polite" });
-  const progress = el("div", { class: "sc-progress", id: "sc-progress" });
-  const stepWrap = el("div", { class: "sc-step", id: "sc-step" });
-  const actions = el("div", { class: "sc-actions" });
-  const backBtn = btn("Back", "secondary");
-  const skipBtn = btn("Skip", "secondary");
-  const nextBtn = btn("Next", "primary");
-  const readAllInline = linkInline("Read about all your options", READ_ALL_URL);
+  var answers = {};
+  var path = ["age"];     // question ids visited; last item is the current step
+  var started = false;
+  var programmesPromise = loadProgrammes();
 
-  backBtn.disabled = true;
+  var card = el("div", { "class": "yg-card" });
+  root.appendChild(card);
 
-  actions.append(backBtn, skipBtn, nextBtn, readAllInline);
-  card.append(progress, stepWrap, actions);
-  root.append(card);
+  renderQuestion(false);
+  watchHeight();
 
-  sendAnalytics("quiz_start", { quiz_id: quizId });
+  // ---- Rendering
+  function renderQuestion(moveFocus) {
+    var qid = path[path.length - 1];
+    var q = QUESTIONS[qid];
+    var stepNo = path.length;
+    var errorId = "yg-error-" + qid;
+    var hintId = "yg-hint-" + qid;
 
-  function renderStep(){
-    // Completed?
-    if (stepIndex >= QUESTIONS.length) {
-      renderResults();
+    clear(card);
+
+    var form = el("form", { "class": "yg-form", novalidate: "novalidate" });
+    var progress = el("p", { "class": "yg-progress" }, "Question " + stepNo + " of " + TOTAL_STEPS);
+    var fieldset = el("fieldset", { "class": "yg-fieldset" });
+    var legend = el("legend", { "class": "yg-legend" });
+    var heading = el("h2", { "class": "yg-q", tabindex: "-1" }, q.text);
+    legend.appendChild(heading);
+    fieldset.appendChild(legend);
+
+    var describedBy = [];
+    if (q.hint) {
+      fieldset.appendChild(el("p", { "class": "yg-hint", id: hintId }, q.hint));
+      describedBy.push(hintId);
+    }
+
+    var error = el("p", { "class": "yg-error", id: errorId, hidden: "hidden" });
+    fieldset.appendChild(error);
+    if (describedBy.length) fieldset.setAttribute("aria-describedby", describedBy.join(" "));
+
+    var options = el("div", { "class": "yg-options" });
+    q.options.forEach(function (opt, i) {
+      var inputId = "yg-" + qid + "-" + i;
+      var label = el("label", { "class": "yg-option", "for": inputId });
+      var input = el("input", { type: "radio", name: qid, id: inputId, value: opt.value });
+      if (answers[qid] === opt.value) input.checked = true;
+      label.appendChild(input);
+      label.appendChild(el("span", {}, opt.label));
+      options.appendChild(label);
+    });
+    fieldset.appendChild(options);
+
+    var actions = el("div", { "class": "yg-actions" });
+    if (path.length > 1) {
+      var back = el("button", { type: "button", "class": "yg-btn yg-btn--secondary" }, "Back");
+      back.addEventListener("click", goBack);
+      actions.appendChild(back);
+    }
+    actions.appendChild(el("button", { type: "submit", "class": "yg-btn yg-btn--primary" }, "Continue"));
+
+    form.appendChild(progress);
+    form.appendChild(fieldset);
+    form.appendChild(actions);
+    card.appendChild(form);
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var checked = form.querySelector('input[name="' + qid + '"]:checked');
+      if (!checked) {
+        error.hidden = false;
+        error.textContent = "";
+        error.appendChild(el("span", { "class": "visually-hidden" }, "Error: "));
+        error.appendChild(document.createTextNode(q.error));
+        fieldset.classList.add("yg-fieldset--error");
+        fieldset.setAttribute("aria-describedby", describedBy.concat(errorId).join(" "));
+        form.querySelector("input").focus();
+        return;
+      }
+      if (!started) {
+        started = true;
+        track("quiz_start", {});
+      }
+      answers[qid] = checked.value;
+      track("quiz_answer", { question_id: qid, answer: checked.value });
+
+      var nextId = q.next(checked.value);
+      if (nextId) {
+        path.push(nextId);
+        renderQuestion(true);
+      } else {
+        renderResult();
+      }
+    });
+
+    if (moveFocus) heading.focus();
+  }
+
+  function goBack() {
+    if (path.length < 2) return;
+    delete answers[path.pop()];
+    track("quiz_back", {});
+    renderQuestion(true);
+  }
+
+  function restart() {
+    answers = {};
+    path = ["age"];
+    track("quiz_restart", {});
+    renderQuestion(true);
+  }
+
+  function renderResult() {
+    if (answers.support) {
+      if (answers.support === "directory") {
+        var under16 = answers.age === "under-16";
+        showSimpleResult("directory", "Find support in the Skills Connect directory",
+          under16
+            ? "The Skills Connect directory lists support in the West of England. This link shows support for people aged 18 and under."
+            : "The Skills Connect directory lists support for people of all ages in the West of England.",
+          { text: "Search the Skills Connect directory", href: under16 ? LINKS.directoryUnder16 : LINKS.directory, type: "directory" });
+      } else {
+        showSimpleResult("contact", "Speak to Skills Connect",
+          "Use the Skills Connect contact form to ask about your next steps.",
+          { text: "Contact Skills Connect", href: LINKS.contact, type: "contact" });
+      }
       return;
     }
 
-    const q = QUESTIONS[stepIndex];
-    progress.textContent = `Question ${stepIndex + 1} of ${QUESTIONS.length}`;
-    stepWrap.replaceChildren();
-
-    const qh = el("h2", { class: "sc-q", id: `label-${q.id}` }, q.text);
-    const list = el("ul", { class: "sc-list", role: "list" });
-
-    // Render normal answers
-    q.answers.forEach(a => { list.append(renderOption(q, a.id, a.label)); });
-
-    // Auto-add "Not sure" with zero weight (suppressed for questions that define their own)
-    if (!q.suppressAutoNotSure) {
-      const notSureId = `${q.id}_not_sure`;
-      list.append(renderOption(q, notSureId, "Not sure", /*isNotSure*/ true));
+    if (answers.area === "elsewhere") {
+      showSimpleResult("ncs", "Find support where you live",
+        "These Youth Guarantee projects are for young people who live in Bristol, Bath and North East Somerset, North Somerset or South Gloucestershire. The National Careers Service can help you find careers advice and support wherever you live.",
+        { text: "Go to the National Careers Service", href: LINKS.ncs, type: "ncs" });
+      return;
     }
 
-    stepWrap.append(qh, list);
+    clear(card);
+    card.appendChild(el("p", { "class": "yg-progress" }, "Loading results"));
 
-    // Buttons state
-    backBtn.disabled = stepIndex === 0;
-    nextBtn.textContent = stepIndex === QUESTIONS.length - 1 ? "See results" : "Next";
-    nextBtn.disabled = !(answers[q.id]);
-
-    // Keyboard: Enter moves next if selection present
-    stepWrap.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && answers[q.id]) {
-        e.preventDefault();
-        goNext();
+    programmesPromise.then(function (all) {
+      if (!all) {
+        showSimpleResult("error", "See Youth Guarantee projects",
+          "We could not load the list of projects. You can see them all on the Youth Guarantee page.",
+          { text: "See all Youth Guarantee projects", href: LINKS.ygPage, type: "yg_page" });
+        return;
       }
-    }, { once: true });
-
-    // Skip handler
-    skipBtn.onclick = () => {
-      answers[q.id] = "SKIPPED";
-      sendAnalytics("quiz_skip", { quiz_id: quizId, question_id: q.id });
-      goNext();
-    };
-  }
-
-  function renderOption(q, answerId, label, isNotSure = false){
-    const li = el("li");
-    const optionLabel = el("label", { class: "sc-option" });
-    const input = el("input", {
-      type: "radio",
-      name: q.id,
-      value: answerId,
-      "aria-labelledby": `label-${q.id}`,
-      required: "required"
-    });
-    if (answers[q.id] === answerId) input.checked = true;
-
-    optionLabel.append(input, el("span", {}, label));
-    li.append(optionLabel);
-
-    input.addEventListener("change", () => {
-      answers[q.id] = answerId;
-      nextBtn.disabled = false;
-      if (isNotSure) {
-        sendAnalytics("quiz_not_sure", { quiz_id: quizId, question_id: q.id });
-      } else {
-        sendAnalytics("quiz_answer", { quiz_id: quizId, question_id: q.id, answer_id: answerId });
+      var band = AGE_BANDS[answers.age];
+      var matches = matchProgrammes(all, answers.area, band);
+      if (!matches.length) {
+        showSimpleResult("none", "Speak to Skills Connect",
+          "There are no Youth Guarantee projects open for you in " + AREAS[answers.area] + " right now. Skills Connect can help you find other support.",
+          { text: "Contact Skills Connect", href: LINKS.contact, type: "contact" });
+        return;
       }
+      showProgrammes(matches);
     });
-
-    return li;
   }
 
-  function goNext(){
-    if (stepIndex < QUESTIONS.length && !answers[QUESTIONS[stepIndex].id]) return;
-    stepIndex += 1;
-    renderStep();
-  }
-  function goBack(){
-    if (stepIndex === 0) return;
-    stepIndex -= 1;
-    renderStep();
-  }
+  function showProgrammes(list) {
+    clear(card);
+    var heading = el("h2", { "class": "yg-result-h", tabindex: "-1" },
+      "Youth Guarantee support in " + AREAS[answers.area]);
+    var lead = el("p", { "class": "yg-lead" },
+      (list.length === 1 ? "This project is" : "These " + list.length + " projects are") +
+      " free. Check who each one is for, then apply to any that suit you.");
 
-  nextBtn.addEventListener("click", goNext);
-  backBtn.addEventListener("click", goBack);
-
-  // Inline read-all analytics
-  readAllInline.addEventListener("click", () => {
-    sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "inline_link" });
-  });
-
-  renderStep();
-
-  function renderResults(){
-    // Score
-    Object.keys(OUTCOMES).forEach(k => scores[k] = 0);
-
-    QUESTIONS.forEach(q => {
-      const ansId = answers[q.id];
-      if (!ansId || ansId === "SKIPPED" || ansId.endsWith("_not_sure")) return;
-      const ans = q.answers.find(a => a.id === ansId);
-      if (!ans) return;
-      Object.entries(ans.weights || {}).forEach(([outcome, val]) => {
-        scores[outcome] = (scores[outcome] || 0) + Number(val || 0);
+    var ul = el("ul", { "class": "yg-programmes" });
+    list.forEach(function (p) {
+      var li = el("li", { "class": "yg-programme" });
+      li.appendChild(el("h3", {}, p.name));
+      li.appendChild(el("p", {}, p.summary));
+      var who = el("p", { "class": "yg-who" });
+      who.appendChild(el("span", {}, "Who it is for: "));
+      who.appendChild(document.createTextNode(p.who_for));
+      li.appendChild(who);
+      var a = linkEl(p.apply_label, p.apply_url, "yg-apply");
+      a.addEventListener("click", function () {
+        track("quiz_link_click", { link_type: "apply", programme_id: p.id });
       });
+      li.appendChild(a);
+      ul.appendChild(li);
     });
 
-    // Sort outcomes
-    const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
-    const top = sorted[0];
-    const second = sorted[1];
-    const showSecond = second && top && (top[1] - second[1] <= 2);
-
-    sendAnalytics("quiz_complete", {
-      quiz_id: quizId,
-      top_outcome: top ? top[0] : null,
-      second_outcome: showSecond ? second[0] : null,
-      question_count: QUESTIONS.length,
-      answered_count: Object.values(answers).filter(v => v && v !== "SKIPPED").length
+    var more = el("p", { "class": "yg-more" });
+    more.appendChild(document.createTextNode("Not sure which one is right for you? "));
+    var contact = linkEl("Speak to Skills Connect", LINKS.contact, "yg-link");
+    contact.addEventListener("click", function () {
+      track("quiz_link_click", { link_type: "contact" });
     });
+    more.appendChild(contact);
 
-    // Replace UI with results
-    progress.textContent = "Your suggested routes";
-    stepWrap.replaceChildren();
+    card.appendChild(heading);
+    card.appendChild(lead);
+    card.appendChild(ul);
+    card.appendChild(more);
+    card.appendChild(restartActions());
 
-    const answeredCount = Object.keys(answers).filter(k => {
-      const v = answers[k];
-      return v && v !== "SKIPPED" && !v.endsWith("_not_sure");
-    }).length;
+    track("quiz_complete", {
+      outcome: "programmes",
+      age_band: answers.age,
+      area: answers.area,
+      result_count: list.length
+    });
+    heading.focus();
+  }
 
-    if (!top || answeredCount < 2) {
-      const info = el("p", {}, "Not enough answers to prioritise one route. Read all your options below.");
-      stepWrap.append(info);
+  function showSimpleResult(outcome, title, text, link) {
+    clear(card);
+    var heading = el("h2", { "class": "yg-result-h", tabindex: "-1" }, title);
+    var p = el("p", { "class": "yg-lead" }, text);
+    var linkWrap = el("p", { "class": "yg-more" });
+    var a = linkEl(link.text, link.href, "yg-apply");
+    a.addEventListener("click", function () {
+      track("quiz_link_click", { link_type: link.type });
+    });
+    linkWrap.appendChild(a);
+
+    card.appendChild(heading);
+    card.appendChild(p);
+    card.appendChild(linkWrap);
+    card.appendChild(restartActions());
+
+    track("quiz_complete", {
+      outcome: outcome,
+      age_band: answers.age || null,
+      area: answers.area || null,
+      result_count: 0
+    });
+    heading.focus();
+  }
+
+  function restartActions() {
+    var actions = el("div", { "class": "yg-actions" });
+    var again = el("button", { type: "button", "class": "yg-btn yg-btn--secondary" }, "Start again");
+    again.addEventListener("click", restart);
+    actions.appendChild(again);
+    return actions;
+  }
+
+  // ---- Data
+  function loadProgrammes() {
+    if (!window.fetch) return Promise.resolve(null);
+    return fetch(DATA_URL, { cache: "no-cache" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (!Array.isArray(data)) return null;
+        // Drop any entry with missing or malformed fields so one bad edit
+        // does not break the whole list
+        return data.filter(function (p) {
+          var ok = p && typeof p.name === "string" && p.name &&
+            Array.isArray(p.areas) &&
+            typeof p.age_min === "number" && typeof p.age_max === "number" &&
+            typeof p.apply_url === "string" && p.apply_url;
+          if (!ok && window.console) console.warn("[yg-quiz] Skipped invalid programme entry", p);
+          return ok;
+        });
+      })
+      .catch(function () { return null; });
+  }
+
+  function matchProgrammes(all, area, band) {
+    return all
+      .filter(function (p) {
+        return p.areas.indexOf(area) !== -1 &&
+          band.min >= p.age_min &&
+          band.max <= p.age_max;
+      })
+      // Projects for one area first, then those covering several areas
+      .sort(function (a, b) {
+        return a.areas.length - b.areas.length;
+      });
+  }
+
+  // ---- Analytics and embedding
+  function isEmbedded() {
+    try { return window.self !== window.top; } catch (_) { return true; }
+  }
+
+  function postToHost(msg) {
+    if (!embedded) return;
+    HOST_ORIGINS.forEach(function (origin) {
+      try { window.parent.postMessage(msg, origin); } catch (_) {}
+    });
+  }
+
+  function track(name, params) {
+    var payload = Object.assign({ quiz_id: quizId }, params);
+    if (embedded) {
+      postToHost({ source: "yg-quiz", type: "event", name: name, params: payload });
     } else {
-      const results = el("div", { class: "sc-results" });
-      if (top) results.append(renderResultCard(top[0]));
-      if (showSecond) results.append(renderResultCard(second[0]));
-
-      // "Why these results?"
-      const why = el("details", { class: "sc-card" });
-      const whySum = el("summary", {}, "Why these results?");
-      const whyList = el("ul");
-      Object.entries(answers).forEach(([qid, aid]) => {
-        const Q = QUESTIONS.find(q => q.id === qid);
-        if (!Q) return;
-        let label;
-        if (aid === "SKIPPED") label = "Skipped";
-        else if (aid.endsWith("_not_sure")) label = "Not sure";
-        else label = Q.answers.find(a => a.id === aid)?.label;
-        if (Q && label) whyList.append(el("li", {}, `${Q.text} — ${label}`));
-      });
-      why.append(whySum, whyList);
-
-      stepWrap.append(results, why);
+      try {
+        if (typeof window.gtag === "function") window.gtag("event", name, payload);
+      } catch (_) {}
     }
-
-    // Actions: replace with retake + same inline read-all link
-    actions.replaceChildren();
-    const retake = btn("Start again", "secondary");
-    const readAllInlineResults = linkInline("Read about all your options", READ_ALL_URL);
-
-    retake.addEventListener("click", () => {
-      Object.keys(answers).forEach(k => delete answers[k]);
-      stepIndex = 0;
-      actions.replaceChildren(backBtn, skipBtn, nextBtn, readAllInline);
-      renderStep();
-      sendAnalytics("quiz_restart", { quiz_id: quizId });
-    });
-    readAllInlineResults.addEventListener("click", () => {
-      sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "inline_link_results" });
-    });
-
-    actions.append(retake, readAllInlineResults);
   }
 
-  function renderResultCard(key){
-    const data = OUTCOMES[key];
-    const wrap = el("section", { class: "sc-card sc-result", style:`border-left-color:${data.accent}` });
-    const h = el("h3", {}, data.title);
-    const p = el("p", {}, data.summary);
-    const links = el("div", { class: "sc-links" });
-    (data.links || []).forEach(l => {
-      const a = el("a", { class:"sc-link", href:l.href, target:"_blank", rel:"noopener noreferrer" }, l.text);
-      links.append(a);
-    });
-    wrap.append(h, p);
-    if ((data.links || []).length) wrap.append(links);
-    return wrap;
+  function watchHeight() {
+    if (!embedded) return;
+    var last = 0;
+    function send() {
+      var h = Math.ceil(document.body.getBoundingClientRect().height);
+      if (h && h !== last) {
+        last = h;
+        postToHost({ source: "yg-quiz", type: "height", value: h });
+      }
+    }
+    if (window.ResizeObserver) {
+      new ResizeObserver(send).observe(document.body);
+    } else {
+      window.addEventListener("resize", send);
+      setInterval(send, 1000);
+    }
+    send();
   }
 
-  // Small helpers
-  function el(tag, attrs = {}, text){
-    const node = document.createElement(tag);
-    for (const [k,v] of Object.entries(attrs)) {
-      if (v === null || v === undefined) continue;
-      node.setAttribute(k, v);
-    }
+  // ---- Helpers
+  function el(tag, attrs, text) {
+    var node = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      node.setAttribute(k, attrs[k]);
+    });
     if (text) node.appendChild(document.createTextNode(text));
     return node;
   }
-  function btn(label, variant="primary"){
-    const b = el("button", { type:"button", class:`sc-btn sc-btn--${variant}` }, label);
-    b.addEventListener("keyup", e => { if (e.key === "Enter" || e.key === " ") b.click(); });
-    return b;
-  }
-  function linkInline(label, href){
-    // Open the read-all link in a new tab and add safe rel attributes
-    const a = el("a", { href, class:"sc-readall", target:"_blank", rel:"noopener noreferrer" }, label);
+
+  function linkEl(text, href, cls) {
+    var a = el("a", { href: href, "class": cls });
+    var isMail = href.indexOf("mailto:") === 0;
+    var isSkillsConnect = /^https:\/\/(www\.)?skillsconnect\.org\.uk\//.test(href);
+    a.appendChild(document.createTextNode(text));
+    if (isSkillsConnect) {
+      a.setAttribute("target", "_top"); // leave the iframe, stay in the same tab
+    } else if (!isMail) {
+      a.setAttribute("target", "_blank");
+      a.setAttribute("rel", "noopener noreferrer");
+      a.appendChild(el("span", { "class": "visually-hidden" }, " (opens in new tab)"));
+    }
     return a;
+  }
+
+  function clear(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
   }
 })();
